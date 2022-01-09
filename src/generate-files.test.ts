@@ -178,14 +178,12 @@ describe(`generateFiles()`, () => {
   test(`defining a file with the same path more than once causes an error`, () => {
     expect(() =>
       generateFiles({definitions: [{path: `a`}, {path: `a`}]}),
-    ).toThrow(new Error(`A file with the path "a" is defined more than once.`));
+    ).toThrow(new Error(`A file with path "a" is defined more than once.`));
 
     expect(() =>
       generateFiles({
         definitions: [{path: `../a`}, {path: `../a`}],
       }),
-    ).toThrow(
-      new Error(`A file with the path "../a" is defined more than once.`),
-    );
+    ).toThrow(new Error(`A file with path "../a" is defined more than once.`));
   });
 });

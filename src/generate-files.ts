@@ -66,9 +66,7 @@ export function generateFiles<TDefinition extends FileDefinition<any>>(
     const {path} = definition;
 
     if (definitionsByPath[path]) {
-      throw new Error(
-        `A file with the path "${path}" is defined more than once.`,
-      );
+      throw new Error(`A file with path "${path}" is defined more than once.`);
     }
 
     definitionsByPath[path] = definition;
