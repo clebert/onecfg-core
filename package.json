@@ -1,6 +1,6 @@
 {
   "name": "@onecfg/core",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "The core of onecfg.",
   "bugs": {
     "url": "https://github.com/clebert/onecfg-core/issues"
