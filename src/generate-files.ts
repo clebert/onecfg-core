@@ -1,13 +1,12 @@
 import {posix} from 'path';
 
-export interface FileGeneratorConfig<TMetadata> {
-  readonly definitions?: readonly FileDefinition<TMetadata, any>[];
-  readonly contentChanges?: readonly FileContentChange<TMetadata, any>[];
+export interface FileGeneratorConfig<TDefinition extends FileDefinition<any>> {
+  readonly definitions?: readonly TDefinition[];
+  readonly contentChanges?: readonly FileContentChange<any, TDefinition>[];
 }
 
-export interface FileDefinition<TMetadata, TContentValue> {
+export interface FileDefinition<TContentValue> {
   readonly path: string;
-  readonly metadata: TMetadata;
   readonly content?: FileContent<TContentValue>;
 }
 
@@ -20,39 +19,37 @@ export interface FileContent<TValue> {
 export type Predicate<TValue> = (value: unknown) => value is TValue;
 export type Serializer<TValue> = (value: TValue) => string;
 
-export interface FileContentChange<TMetadata, TValue> {
+export interface FileContentChange<
+  TValue,
+  TOtherDefinition extends FileDefinition<unknown>,
+> {
   readonly path: string;
   readonly predicate: Predicate<TValue>;
-  readonly reducer: FileContentReducer<TMetadata, TValue>;
+  readonly reducer: FileContentReducer<TValue, TOtherDefinition>;
 }
 
-export type FileContentReducer<TMetadata, TValue> = (
-  args: FileContentReducerArgs<TMetadata, TValue>,
-) => TValue;
+export type FileContentReducer<
+  TValue,
+  TOtherDefinition extends FileDefinition<unknown>,
+> = (args: FileContentReducerArgs<TValue, TOtherDefinition>) => TValue;
 
-export interface FileContentReducerArgs<TMetadata, TValue> {
+export interface FileContentReducerArgs<
+  TValue,
+  TOtherDefinition extends FileDefinition<unknown>,
+> {
   readonly previousValue: TValue;
-  readonly otherDefinitions: readonly ShallowFileDefinition<TMetadata>[];
+  readonly otherDefinitions: readonly TOtherDefinition[];
 }
-
-export type ShallowFileDefinition<TMetadata> = Omit<
-  FileDefinition<TMetadata, unknown>,
-  'content'
->;
 
 export interface GeneratedFile {
   readonly path: string;
   readonly data: string;
 }
 
-export function generateFiles<TMetadata>(
-  config: FileGeneratorConfig<TMetadata>,
+export function generateFiles<TDefinition extends FileDefinition<any>>(
+  config: FileGeneratorConfig<TDefinition>,
 ): readonly GeneratedFile[] {
-  const definitionsByPath: Record<
-    string,
-    Omit<FileDefinition<TMetadata, unknown>, 'content'>
-  > = {};
-
+  const definitionsByPath: Record<string, TDefinition> = {};
   const {definitions = [], contentChanges = []} = config;
 
   for (const {path} of [...definitions, ...contentChanges]) {
@@ -65,14 +62,16 @@ export function generateFiles<TMetadata>(
     }
   }
 
-  for (const {path, metadata} of definitions) {
+  for (const definition of definitions) {
+    const {path} = definition;
+
     if (definitionsByPath[path]) {
       throw new Error(
         `A file with the path "${path}" is defined more than once.`,
       );
     }
 
-    definitionsByPath[path] = {path, metadata};
+    definitionsByPath[path] = definition;
   }
 
   const generatedFiles: GeneratedFile[] = [];

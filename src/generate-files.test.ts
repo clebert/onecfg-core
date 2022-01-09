@@ -1,5 +1,10 @@
 import {generateFiles} from './generate-files';
-import type {FileContent, Predicate} from '.';
+import type {FileContent, FileDefinition, Predicate} from '.';
+
+interface TestFileDefinition<TContentValue>
+  extends FileDefinition<TContentValue> {
+  readonly test: true;
+}
 
 function truthy(_value: unknown): _value is string {
   return true;
@@ -18,15 +23,15 @@ function createContent(
 
 describe(`generateFiles()`, () => {
   test(`an empty config`, () => {
-    expect(generateFiles<number>({})).toEqual([]);
+    expect(generateFiles({})).toEqual([]);
   });
 
   test(`no file content changes`, () => {
     expect(
-      generateFiles<number>({
+      generateFiles({
         definitions: [
-          {path: `a`, metadata: 0, content: createContent(`A0`, truthy)},
-          {path: `b`, metadata: 0},
+          {path: `a`, content: createContent(`A0`, truthy)},
+          {path: `b`},
         ],
       }),
     ).toEqual([{path: `a`, data: `a0`}]);
@@ -40,13 +45,27 @@ describe(`generateFiles()`, () => {
     const reducerC1 = jest.fn(() => `C1`);
     const reducerC2 = jest.fn(() => `C2`);
 
+    const definitionA: TestFileDefinition<string> = {
+      test: true,
+      path: `a`,
+      content: createContent(`A0`, truthy),
+    };
+
+    const definitionB: TestFileDefinition<string> = {
+      test: true,
+      path: `b`,
+      content: createContent(`B0`, truthy),
+    };
+
+    const definitionC: TestFileDefinition<string> = {
+      test: true,
+      path: `c`,
+      content: createContent(`C0`, truthy),
+    };
+
     expect(
-      generateFiles<number>({
-        definitions: [
-          {path: `a`, metadata: 0, content: createContent(`A0`, truthy)},
-          {path: `b`, metadata: 1, content: createContent(`B0`, truthy)},
-          {path: `c`, metadata: 2, content: createContent(`C0`, truthy)},
-        ],
+      generateFiles({
+        definitions: [definitionA, definitionB, definitionC],
         contentChanges: [
           {path: `a`, predicate: truthy, reducer: reducerA1},
           {path: `b`, predicate: truthy, reducer: reducerB1},
@@ -63,75 +82,27 @@ describe(`generateFiles()`, () => {
     ]);
 
     expect(reducerA1.mock.calls).toEqual([
-      [
-        {
-          previousValue: `A0`,
-          otherDefinitions: [
-            {path: `b`, metadata: 1},
-            {path: `c`, metadata: 2},
-          ],
-        },
-      ],
+      [{previousValue: `A0`, otherDefinitions: [definitionB, definitionC]}],
     ]);
 
     expect(reducerA2.mock.calls).toEqual([
-      [
-        {
-          previousValue: `A1`,
-          otherDefinitions: [
-            {path: `b`, metadata: 1},
-            {path: `c`, metadata: 2},
-          ],
-        },
-      ],
+      [{previousValue: `A1`, otherDefinitions: [definitionB, definitionC]}],
     ]);
 
     expect(reducerB1.mock.calls).toEqual([
-      [
-        {
-          previousValue: `B0`,
-          otherDefinitions: [
-            {path: `a`, metadata: 0},
-            {path: `c`, metadata: 2},
-          ],
-        },
-      ],
+      [{previousValue: `B0`, otherDefinitions: [definitionA, definitionC]}],
     ]);
 
     expect(reducerB2.mock.calls).toEqual([
-      [
-        {
-          previousValue: `B1`,
-          otherDefinitions: [
-            {path: `a`, metadata: 0},
-            {path: `c`, metadata: 2},
-          ],
-        },
-      ],
+      [{previousValue: `B1`, otherDefinitions: [definitionA, definitionC]}],
     ]);
 
     expect(reducerC1.mock.calls).toEqual([
-      [
-        {
-          previousValue: `C0`,
-          otherDefinitions: [
-            {path: `a`, metadata: 0},
-            {path: `b`, metadata: 1},
-          ],
-        },
-      ],
+      [{previousValue: `C0`, otherDefinitions: [definitionA, definitionB]}],
     ]);
 
     expect(reducerC2.mock.calls).toEqual([
-      [
-        {
-          previousValue: `C1`,
-          otherDefinitions: [
-            {path: `a`, metadata: 0},
-            {path: `b`, metadata: 1},
-          ],
-        },
-      ],
+      [{previousValue: `C1`, otherDefinitions: [definitionA, definitionB]}],
     ]);
   });
 
@@ -139,8 +110,8 @@ describe(`generateFiles()`, () => {
     const reducer = jest.fn();
 
     expect(
-      generateFiles<number>({
-        definitions: [{path: `a`, metadata: 0}],
+      generateFiles({
+        definitions: [{path: `a`}],
         contentChanges: [
           {path: `a`, predicate: truthy, reducer},
           {path: `b`, predicate: truthy, reducer},
@@ -155,10 +126,8 @@ describe(`generateFiles()`, () => {
     const reducer = jest.fn();
 
     expect(() =>
-      generateFiles<number>({
-        definitions: [
-          {path: `a`, metadata: 0, content: createContent(`A0`, truthy)},
-        ],
+      generateFiles({
+        definitions: [{path: `a`, content: createContent(`A0`, truthy)}],
         contentChanges: [{path: `a`, predicate: falsy, reducer}],
       }),
     ).toThrow(
@@ -170,10 +139,8 @@ describe(`generateFiles()`, () => {
 
   test(`serializing malformed file content causes an error`, () => {
     expect(() =>
-      generateFiles<number>({
-        definitions: [
-          {path: `a`, metadata: 0, content: createContent(`A0`, falsy)},
-        ],
+      generateFiles({
+        definitions: [{path: `a`, content: createContent(`A0`, falsy)}],
       }),
     ).toThrow(
       new Error(`Unable to serialize the malformed content of file "a".`),
@@ -181,30 +148,28 @@ describe(`generateFiles()`, () => {
   });
 
   test(`specifying an absolute file path causes an error`, () => {
-    expect(() =>
-      generateFiles<number>({definitions: [{path: `/a`, metadata: 0}]}),
-    ).toThrow(new Error(`The specified file path "/a" must be relative.`));
+    expect(() => generateFiles({definitions: [{path: `/a`}]})).toThrow(
+      new Error(`The specified file path "/a" must be relative.`),
+    );
 
     expect(() =>
-      generateFiles<number>({
+      generateFiles({
         contentChanges: [{path: `/a`, predicate: truthy, reducer: jest.fn()}],
       }),
     ).toThrow(new Error(`The specified file path "/a" must be relative.`));
   });
 
   test(`specifying a non-normalized file path causes an error`, () => {
-    expect(() =>
-      generateFiles<number>({definitions: [{path: `./a`, metadata: 0}]}),
-    ).toThrow(new Error(`The specified file path "./a" must be normalized.`));
+    expect(() => generateFiles({definitions: [{path: `./a`}]})).toThrow(
+      new Error(`The specified file path "./a" must be normalized.`),
+    );
 
-    expect(() =>
-      generateFiles<number>({definitions: [{path: `a/../b`, metadata: 0}]}),
-    ).toThrow(
+    expect(() => generateFiles({definitions: [{path: `a/../b`}]})).toThrow(
       new Error(`The specified file path "a/../b" must be normalized.`),
     );
 
     expect(() =>
-      generateFiles<number>({
+      generateFiles({
         contentChanges: [{path: `./a`, predicate: truthy, reducer: jest.fn()}],
       }),
     ).toThrow(new Error(`The specified file path "./a" must be normalized.`));
@@ -212,20 +177,12 @@ describe(`generateFiles()`, () => {
 
   test(`defining a file with the same path more than once causes an error`, () => {
     expect(() =>
-      generateFiles<number>({
-        definitions: [
-          {path: `a`, metadata: 0},
-          {path: `a`, metadata: 1},
-        ],
-      }),
+      generateFiles({definitions: [{path: `a`}, {path: `a`}]}),
     ).toThrow(new Error(`A file with the path "a" is defined more than once.`));
 
     expect(() =>
-      generateFiles<number>({
-        definitions: [
-          {path: `../a`, metadata: 0},
-          {path: `../a`, metadata: 1},
-        ],
+      generateFiles({
+        definitions: [{path: `../a`}, {path: `../a`}],
       }),
     ).toThrow(
       new Error(`A file with the path "../a" is defined more than once.`),
