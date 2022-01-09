@@ -1,6 +1,6 @@
 # @onecfg/core
 
-The core of `onecfg`.
+The core of [`onecfg`](https://github.com/clebert/onecfg).
 
 ## Installation
 
