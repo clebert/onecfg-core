@@ -5,5 +5,5 @@ The core of [`onecfg`](https://github.com/clebert/onecfg).
 ## Installation
 
 ```
-npm install @onecfg/core --save-dev
+npm install @onecfg/core
 ```
