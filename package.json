@@ -2,16 +2,8 @@
   "name": "@onecfg/core",
   "version": "1.0.0",
   "description": "The core of onecfg.",
-  "bugs": {
-    "url": "https://github.com/clebert/onecfg-core/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/clebert/onecfg-core.git"
-  },
   "license": "MIT",
   "author": "Clemens Akens",
-  "sideEffects": false,
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.js",
   "types": "lib/esm/index.d.ts",
