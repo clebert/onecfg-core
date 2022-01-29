@@ -14,9 +14,14 @@ export type Serializer<TContent> = (content: TContent) => string;
 
 export interface FileChange<TContent> extends FileDeclaration<TContent> {
   readonly replacer: Replacer<TContent>;
+  readonly options?: FileChangeOptions;
 }
 
 export type Replacer<TContent> = (previousContent: TContent) => TContent;
+
+export interface FileChangeOptions {
+  readonly priority?: -1 | 0 | 1;
+}
 
 export function generateContent(
   fileDefinition: FileDefinition<any>,
@@ -28,16 +33,20 @@ export function generateContent(
 
   for (const fileChange of fileChanges) {
     check(fileChange.path);
+  }
 
-    if (fileDefinition.path === fileChange.path) {
-      if (!fileChange.predicate(content)) {
-        throw new Error(
-          `incompatible file content to replace: ${fileDefinition.path}`,
-        );
-      }
+  fileChanges = fileChanges
+    .filter((fileChange) => fileChange.path === fileDefinition.path)
+    .sort((a, b) => (a.options?.priority ?? 0) - (b.options?.priority ?? 0));
 
-      content = fileChange.replacer(content);
+  for (const fileChange of fileChanges) {
+    if (!fileChange.predicate(content)) {
+      throw new Error(
+        `incompatible file content to replace: ${fileDefinition.path}`,
+      );
     }
+
+    content = fileChange.replacer(content);
   }
 
   if (!fileDefinition.predicate(content)) {

@@ -52,6 +52,10 @@ describe(`generateContent()`, () => {
     const barSerializer = jest.fn((content: string) => content.toUpperCase());
     const barReplacer1 = jest.fn((content) => `${content}b`);
     const barReplacer2 = jest.fn((content) => `${content}c`);
+    const barReplacer3 = jest.fn((content) => `${content}d`);
+    const barReplacer4 = jest.fn((content) => `${content}e`);
+    const barReplacer5 = jest.fn((content) => `${content}f`);
+    const barReplacer6 = jest.fn((content) => `${content}g`);
     const bazPredicate = jest.fn() as PredicateMock;
     const bazReplacer = jest.fn();
     const quxPredicate = jest.fn() as PredicateMock;
@@ -76,6 +80,30 @@ describe(`generateContent()`, () => {
       replacer: barReplacer2,
     };
 
+    const barChange3: FileChange<string> = {
+      path: `foo/bar`,
+      predicate: barPredicate,
+      replacer: barReplacer3,
+    };
+
+    const barChange4: FileChange<string> = {
+      path: `foo/bar`,
+      predicate: barPredicate,
+      replacer: barReplacer4,
+    };
+
+    const barChange5: FileChange<string> = {
+      path: `foo/bar`,
+      predicate: barPredicate,
+      replacer: barReplacer5,
+    };
+
+    const barChange6: FileChange<string> = {
+      path: `foo/bar`,
+      predicate: barPredicate,
+      replacer: barReplacer6,
+    };
+
     const bazChange: FileChange<string> = {
       path: `foo/baz`,
       predicate: bazPredicate,
@@ -90,18 +118,35 @@ describe(`generateContent()`, () => {
 
     expect(
       generateContent(
-        barDefinition,
+        barDefinition, // a
         bazChange,
-        barChange1,
-        barChange2,
+        {...barChange5, options: {priority: 1}}, // f
+        barChange2, // c
+        {...barChange3, options: {}}, // d
+        {...barChange1, options: {priority: -1}}, // b
+        {...barChange4, options: {priority: 0}}, // e
+        {...barChange6, options: {priority: 1}}, // g
         quxChange,
       ),
-    ).toBe(`ABC`);
+    ).toBe(`ABCDEFG`);
 
-    expect(barPredicate.mock.calls).toEqual([[`a`], [`ab`], [`abc`]]);
-    expect(barSerializer.mock.calls).toEqual([[`abc`]]);
+    expect(barPredicate.mock.calls).toEqual([
+      [`a`],
+      [`ab`],
+      [`abc`],
+      [`abcd`],
+      [`abcde`],
+      [`abcdef`],
+      [`abcdefg`],
+    ]);
+
+    expect(barSerializer.mock.calls).toEqual([[`abcdefg`]]);
     expect(barReplacer1.mock.calls).toEqual([[`a`]]);
     expect(barReplacer2.mock.calls).toEqual([[`ab`]]);
+    expect(barReplacer3.mock.calls).toEqual([[`abc`]]);
+    expect(barReplacer4.mock.calls).toEqual([[`abcd`]]);
+    expect(barReplacer5.mock.calls).toEqual([[`abcde`]]);
+    expect(barReplacer6.mock.calls).toEqual([[`abcdef`]]);
     expect(bazPredicate.mock.calls).toEqual([]);
     expect(bazReplacer.mock.calls).toEqual([]);
     expect(quxPredicate.mock.calls).toEqual([]);
