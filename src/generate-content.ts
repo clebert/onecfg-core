@@ -13,15 +13,15 @@ export interface FileDefinition<TContent> extends FileDeclaration<TContent> {
 export type Serializer<TContent> = (content: TContent) => string;
 
 export interface FileChange<TContent> extends FileDeclaration<TContent> {
-  readonly replacer: Replacer<TContent>;
   readonly options?: FileChangeOptions;
+  readonly replacer: Replacer<TContent>;
 }
-
-export type Replacer<TContent> = (previousContent: TContent) => TContent;
 
 export interface FileChangeOptions {
   readonly priority?: -1 | 0 | 1;
 }
+
+export type Replacer<TContent> = (previousContent: TContent) => TContent;
 
 export function generateContent(
   fileDefinition: FileDefinition<any>,
