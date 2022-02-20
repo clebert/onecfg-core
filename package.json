@@ -2,6 +2,10 @@
   "name": "@onecfg/core",
   "version": "2.1.0",
   "description": "The core of onecfg.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clebert/onecfg-core.git"
+  },
   "license": "MIT",
   "author": "Clemens Akens",
   "main": "lib/cjs/index.js",
