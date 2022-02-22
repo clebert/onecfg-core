@@ -8,27 +8,38 @@
   },
   "license": "MIT",
   "author": "Clemens Akens",
-  "main": "lib/cjs/index.js",
-  "module": "lib/esm/index.js",
-  "types": "lib/esm/index.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "files": [
     "lib"
   ],
   "scripts": {
     "ci": "run-p compile format:check lint test",
-    "compile": "onecmd compile",
-    "format": "onecmd format",
-    "format:check": "onecmd format --check",
-    "lint": "onecmd lint",
-    "prepare": "run-s setup",
+    "compile": "tsc --pretty",
+    "format": "prettier .",
+    "format:check": "prettier . --check",
+    "lint": "eslint .",
+    "prepare": "node onecfg.js",
     "release": "npm version",
     "postrelease": "git push --follow-tags",
-    "setup": "onecmd setup",
-    "test": "onecmd test"
+    "test": "jest --silent"
   },
   "devDependencies": {
-    "@onecmd/standard-plugins": "^0.18.0",
-    "npm-run-all": "^4.1.5"
+    "@onecfg/clebert": "^1.0.1",
+    "@swc/core": "^1.2.143",
+    "@swc/jest": "^0.2.17",
+    "@types/jest": "^27.4.0",
+    "@typescript-eslint/eslint-plugin": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.0",
+    "eslint": "^8.9.0",
+    "eslint-config-prettier": "^8.4.0",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-markdown": "^2.2.1",
+    "jest": "^27.5.1",
+    "npm-run-all": "^4.1.5",
+    "onecfg": "^2.0.0",
+    "prettier": "^2.5.1",
+    "typescript": "^4.5.5"
   },
   "publishConfig": {
     "access": "public"
